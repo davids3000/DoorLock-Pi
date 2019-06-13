@@ -59,13 +59,22 @@ print("username ")
 print(username)
 
 print(b.url)
-lights = b.lights
-print(lights.url)
-print(lights())
+groups = b.groups
+#print(groups.url)
+#print(groups())
+#print(groups[1].action(on=True))
+
+# Invert group lights state
+if((groups[1]()['action']['on']) == True):
+    groups[1].action(on=False)
+elif ((groups[1]()['action']['on']) == False):
+    groups[1].action(on=True)
+
+#b.lights[1].state(bri=128, hue=900)
 
 scenes = b.scenes
-print(scenes.url)
-print(scenes())
+#print(scenes.url)
+#print(scenes())
 
 
 #GPIO.add_event_detect(17, GPIO.FALLING)
