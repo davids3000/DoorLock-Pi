@@ -4,12 +4,16 @@
 import RPi.GPIO as GPIO
 import time
 import pyrebase
+import datetime
 from os import path
 from qhue import Bridge
 from qhue import create_new_username
 
+
 BRIDGE_IP = "10.220.45.137"
 #USERNAME = "001788fffe74dfc3"      #This is not the username.  See documentation under "Creating a user"
+
+atHome = False
 
 
 #Firebase Configuration
@@ -35,13 +39,16 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(27, GPIO.OUT)                                    # Door Strike
 GPIO.setup(23, GPIO.OUT)                                    # Status Door Strike
-GPIO.setup(17, GPIO.IN)                                     # Reed Switch
+GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)           # Reed Switch
 
 
 reedState = "Init"
 
 def reed_callback(channel):
     print("Door %s at " )
+    toggleLightState()
+
+
     
 def reed_checkCurrentState():
     if GPIO.input(17):
@@ -64,11 +71,23 @@ groups = b.groups
 #print(groups())
 #print(groups[1].action(on=True))
 
+
 # Invert group lights state
-if((groups[1]()['action']['on']) == True):
-    groups[1].action(on=False)
-elif ((groups[1]()['action']['on']) == False):
-    groups[1].action(on=True)
+def toggleLightState():
+    '''
+    if(((groups[1]()['action']['on']) == True) and (atHome == False)):
+        groups[1].action(on=False)
+    elif ((groups[1]()['action']['on']) == False):
+        groups[1].action(on=True)
+    '''
+    if GPIO.input(17):
+        groups[1].action(on=False)
+        timeClosed = datetime.datetime.now().strftime("%A %B %m %I %M %S %p")
+        db.child("Reed").child("Time").update({"Last Closed": timeClosed})
+    else:
+        groups[1].action(on=True)
+        timeOpened = datetime.datetime.now().strftime("%A %B %m %I %M %S %p")
+        db.child("Reed").child("Time").update({"Last Opened": timeOpened})
 
 #b.lights[1].state(bri=128, hue=900)
 
@@ -81,7 +100,7 @@ scenes = b.scenes
 
     
 #GPIO.add_event_detect(17, GPIO.FALLING, callback=reedclose_callback)
-GPIO.add_event_detect(17, GPIO.BOTH, callback=reed_callback)
+GPIO.add_event_detect(17, GPIO.BOTH, callback=reed_callback, bouncetime=1000)
 
 
 
